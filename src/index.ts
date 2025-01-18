@@ -1,7 +1,30 @@
 import { Elysia } from "elysia";
+import { swagger } from "@elysiajs/swagger";
+import { connectDB } from "./db/db";
+import { blogRoutes } from "./api/blog/blogRoutes";
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8000;
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+const startServer = async () => {
+  try {
+    const app = new Elysia().use(swagger()).use(blogRoutes);
+
+    await connectDB();
+    console.log("📦 Database connected successfully");
+
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`🦊 Elysia is running at http://localhost:${PORT}`);
+    });
+
+    process.on("SIGTERM", () => {
+      console.log("Received SIGTERM. Performing graceful shutdown...");
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
